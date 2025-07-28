@@ -1,5 +1,5 @@
 // backend/services/githubService.js
-const apiClient = require('../utils/apiClient');
+const apiClient = require("../utils/apiClient");
 
 exports.searchUsers = async (query, page = 1, perPage = 5) => {
   const { data } = await apiClient.get(`/search/users`, {
@@ -11,8 +11,8 @@ exports.searchUsers = async (query, page = 1, perPage = 5) => {
   });
 
   // Get additional profile details (for the current page only)
-  const detailPromises = data.items.map(user =>
-    apiClient.get(`/users/${user.login}`).then(resp => resp.data)
+  const detailPromises = data.items.map((user) =>
+    apiClient.get(`/users/${user.login}`).then((resp) => resp.data)
   );
 
   const users = await Promise.all(detailPromises);
@@ -25,26 +25,31 @@ exports.searchUsers = async (query, page = 1, perPage = 5) => {
   };
 };
 
+exports.getUserDetails = async (username) => {
+  const { data } = await apiClient.get(`/users/${username}`);
+  return data;
+};
+
 exports.getUserRepos = async (username, { filterByName, sortBy } = {}) => {
   const { data } = await apiClient.get(`/users/${username}/repos`, {
-    params: { per_page: 100, sort: 'updated' },
+    params: { per_page: 100, sort: "updated" },
   });
 
   let repos = data;
 
   // Filter by name (case-insensitive match)
   if (filterByName) {
-    repos = repos.filter(r =>
+    repos = repos.filter((r) =>
       r.name.toLowerCase().includes(filterByName.toLowerCase())
     );
   }
 
   // Define allowed sort fields and map them to GitHub fields
   const sortFieldMap = {
-    stars: 'stargazers_count',
-    forks: 'forks_count',
-    issues: 'open_issues_count',
-    name: 'name',
+    stars: "stargazers_count",
+    forks: "forks_count",
+    issues: "open_issues_count",
+    name: "name",
   };
 
   // Sort
@@ -52,7 +57,7 @@ exports.getUserRepos = async (username, { filterByName, sortBy } = {}) => {
     const field = sortFieldMap[sortBy];
     repos = repos.sort((a, b) => {
       // For string (name), use localeCompare
-      if (field === 'name') return a.name.localeCompare(b.name);
+      if (field === "name") return a.name.localeCompare(b.name);
       // For numbers (stars, forks, issues)
       return (b[field] ?? 0) - (a[field] ?? 0);
     });
@@ -61,33 +66,83 @@ exports.getUserRepos = async (username, { filterByName, sortBy } = {}) => {
   return repos;
 };
 
+exports.searchRepositories = async (query, page = 1, perPage = 5) => {
+    const { data } = await apiClient.get(`/search/repositories`, {
+      params: {
+        q: query,
+        per_page: perPage,
+        page: page,
+      },
+    });
+
+    return {
+      repositories: data.items,
+      totalCount: data.total_count,
+      currentPage: page,
+      perPage,
+    };
+  };
+
 exports.getRepoCommitActivity = async (owner, repo) => {
-  const { data } = await apiClient.get(`/repos/${owner}/${repo}/stats/commit_activity`);
+  const { data } = await apiClient.get(
+    `/repos/${owner}/${repo}/stats/commit_activity`
+  );
   return data; // 52 items: one per week
 };
 
-exports.getRepoContributors = async (owner, repo) => {
-  const { data } = await apiClient.get(`/repos/${owner}/${repo}/contributors`, { params: { per_page: 20 } });
+exports.getRepoContributors = async (owner, repo, page = 1) => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/contributors`, {
+    params: {
+      per_page: 5,
+      page: page,
+    },
+  });
   return data;
 };
+
 
 // Get README (as base64)
 exports.getRepoReadme = async (owner, repo) => {
   try {
     const { data } = await apiClient.get(`/repos/${owner}/${repo}/readme`);
-    const buff = Buffer.from(data.content, 'base64');
+    const buff = Buffer.from(data.content, "base64");
     return buff.toString();
   } catch (err) {
-    if (err.response && err.response.status === 404) return '# No README found';
+    if (err.response && err.response.status === 404) return "# No README found";
     throw err; // Let controller handle other errors
   }
 };
 
-exports.getRepoCommits = async (owner, repo) => {
-  const { data } = await apiClient.get(`/repos/${owner}/${repo}/commits`, { params: { per_page: 10 } });
+exports.getRepoCommits = async (owner, repo, page = 1) => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/commits`, {
+    params: {
+      per_page: 10,
+      page: page,
+    },
+  });
   return data;
 };
+
 exports.getRepoIssues = async (owner, repo) => {
-  const { data } = await apiClient.get(`/repos/${owner}/${repo}/issues`, { params: { state: 'open', per_page: 10 } });
-  return data.filter(i => !i.pull_request);
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/issues`, {
+    params: { state: "open", per_page: 10 },
+  });
+  return data.filter((i) => !i.pull_request);
+};
+
+exports.searchCodeInRepo = async (query, owner, repo, page = 1, perPage = 5) => {
+  const { data } = await apiClient.get(`/search/code`, {
+    params: {
+      q: `${query}+repo:${owner}/${repo}`,
+      per_page: perPage,
+      page: page,
+    },
+  });
+
+  return {
+    items: data.items,
+    totalCount: data.total_count,
+    currentPage: page,
+    perPage,
+  };
 };
