@@ -12,7 +12,11 @@ const treeRoutes=require('./routes/treeRoutes')
 const fileRoutes=require('./routes/fileRoutes')
 const aiRoutes=require('./routes/aiRoutes')
 
-  app.use(cors());
+  app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+  }
+  ));
   app.use(express.json());
   
 app.use('/api/users', userRoutes);
