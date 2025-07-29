@@ -1,11 +1,14 @@
 const githubService = require('../services/githubService');
 
-exports.getCommitActivity = async (owner, repo, page = 1) => {
-  const { data } = await apiClient.get(`/repos/${owner}/${repo}/commits`, {
-    params: {
-      per_page: 10,
-      page: page,
-    },
-  });
-  return data;
+exports.getCommitActivity = async (req, res) => {
+  const { owner, repo } = req.params;
+  const { page = 1 } = req.query;
+
+  try {
+    const commits = await githubService.getCommitActivity(owner, repo, page);
+    res.json({ success: true, data: commits });
+  } catch (err) {
+    console.error('Commit fetch failed:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
 };

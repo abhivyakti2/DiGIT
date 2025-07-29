@@ -83,12 +83,7 @@ exports.searchRepositories = async (query, page = 1, perPage = 5) => {
     };
   };
 
-exports.getRepoCommitActivity = async (owner, repo) => {
-  const { data } = await apiClient.get(
-    `/repos/${owner}/${repo}/stats/commit_activity`
-  );
-  return data; // 52 items: one per week
-};
+
 
 exports.getRepoContributors = async (owner, repo, page = 1) => {
   const { data } = await apiClient.get(`/repos/${owner}/${repo}/contributors`, {
@@ -130,19 +125,72 @@ exports.getRepoIssues = async (owner, repo) => {
   return data.filter((i) => !i.pull_request);
 };
 
-exports.searchCodeInRepo = async (query, owner, repo, page = 1, perPage = 5) => {
-  const { data } = await apiClient.get(`/search/code`, {
-    params: {
-      q: `${query}+repo:${owner}/${repo}`,
-      per_page: perPage,
-      page: page,
-    },
-  });
+// exports.searchCodeInRepo = async (query, owner, repo, page = 1, perPage = 5) => {
+//   const { data } = await apiClient.get(`/search/code`, {
+//     params: {
+//       q: `${query}+repo:${owner}/${repo}`,
+//       per_page: perPage,
+//       page: page,
+//     },
+//   });
 
-  return {
-    items: data.items,
-    totalCount: data.total_count,
-    currentPage: page,
-    perPage,
-  };
+//   return {
+//     items: data.items,
+//     totalCount: data.total_count,
+//     currentPage: page,
+//     perPage,
+//   };
+// };
+
+exports.getCommitActivity = async (owner, repo, page = 1) => {
+  try {
+    const { data } = await apiClient.get(`/repos/${owner}/${repo}/commits`, {
+      params: {
+        per_page: 10,
+        page: page,
+      },
+    });
+
+    // Optional: Clean up each commit object to return only relevant info
+    const commits = data.map(commit => ({
+      sha: commit.sha,
+      message: commit.commit.message,
+      authorName: commit.commit.author.name,
+      authorEmail: commit.commit.author.email,
+      date: commit.commit.author.date,
+      login: commit.author?.login || null,
+      avatar_url: commit.author?.avatar_url || null,
+      html_url: commit.html_url
+    }));
+
+    return commits;
+
+  } catch (error) {
+    console.error('Error in getCommitActivity:', error.message);
+    throw error;
+  }
+};
+
+
+
+exports.fetchRepoTree = async (owner, repo, branch = 'main') => {
+  // Step 1: Get branch info
+  const { data: branchData } = await apiClient.get(`/repos/${owner}/${repo}/branches/${branch}`);
+
+  // ✅ Get tree SHA (not commit SHA)
+  const treeSha = branchData.commit.commit.tree.sha;
+
+  // Step 2: Fetch recursive tree using correct SHA
+  const { data: treeData } = await apiClient.get(
+    `/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`
+  );
+
+  return treeData.tree; // flat array: [{ path, type: 'blob' | 'tree', mode }]
+};
+
+
+
+exports.getFileContent = async (owner, repo, path, branch = 'main') => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/contents/${path}?ref=${branch}`);
+  return Buffer.from(data.content, 'base64').toString('utf8');
 };

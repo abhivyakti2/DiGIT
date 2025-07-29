@@ -66,31 +66,31 @@ exports.searchRepositories = async (req, res, next) => {
 };
 
 
-exports.searchCodeInRepo = async (req, res, next) => {
-  try {
-    const { owner, repo, q, page = 1, perPage = 5 } = req.query;
+// exports.searchCodeInRepo = async (req, res, next) => {
+//   try {
+//     const { owner, repo, q, page = 1, perPage = 5 } = req.query;
 
-    if (!q || !owner || !repo) {
-      return res.status(400).json({ success: false, error: 'Query (q), owner, and repo are required.' });
-    }
+//     if (!q || !owner || !repo) {
+//       return res.status(400).json({ success: false, error: 'Query (q), owner, and repo are required.' });
+//     }
 
-    const result = await githubService.searchCodeInRepo(q, owner, repo, page, perPage);
+//     const result = await githubService.searchCodeInRepo(q, owner, repo, page, perPage);
 
-    res.status(200).json({
-      success: true,
-      query: q,
-      totalCount: result.totalCount,
-      currentPage: result.currentPage,
-      perPage: result.perPage,
-      results: result.items.map(item => ({
-        name: item.name,
-        path: item.path,
-        repository: item.repository.full_name,
-        html_url: item.html_url,
-        score: item.score,
-      })),
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       query: q,
+//       totalCount: result.totalCount,
+//       currentPage: result.currentPage,
+//       perPage: result.perPage,
+//       results: result.items.map(item => ({
+//         name: item.name,
+//         path: item.path,
+//         repository: item.repository.full_name,
+//         html_url: item.html_url,
+//         score: item.score,
+//       })),
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };

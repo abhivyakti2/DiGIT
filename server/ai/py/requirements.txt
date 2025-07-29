@@ -1,0 +1,6 @@
+langchain
+langchain_community
+langchain_ollama
+llama-index
+pandas
+radon # for code complexity
