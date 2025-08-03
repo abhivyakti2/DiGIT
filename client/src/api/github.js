@@ -116,3 +116,15 @@ export function useAskAI(owner, repo, path, branch, promptText) {
     enabled: !!owner && !!repo && !!path && !!promptText,
   });
 }
+
+
+export const useUserDetails = (username) => {
+  return useQuery({
+    queryKey: ['user-details', username],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_URL}/users/${username}`);
+      return data.user;
+    },
+    enabled: !!username, // prevents running if username is falsy
+  });
+};

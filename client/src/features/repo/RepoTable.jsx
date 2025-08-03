@@ -1,76 +1,32 @@
-import React, { useState } from 'react'
-import ExportCSV from './ExportCSV'
+import React from 'react'
 
-export default function RepoTable({ repos = [] }) {
-  const [filter, setFilter] = useState('')
-  const [sortBy, setSortBy] = useState('stars')
-  const [sortOrderAsc, setSortOrderAsc] = useState(false)
-
-  const filteredRepos = repos.filter(r =>
-    r.name.toLowerCase().includes(filter.toLowerCase())
-  )
-
-  const sortedRepos = filteredRepos.sort((a, b) => {
-    if (sortBy === 'name') {
-      return sortOrderAsc
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name)
-    }
-    return sortOrderAsc
-      ? a[sortBy] - b[sortBy]
-      : b[sortBy] - a[sortBy]
-  })
-
-  const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrderAsc(!sortOrderAsc)
-    } else {
-      setSortBy(field)
-      setSortOrderAsc(false)
-    }
-  }
+export default function RepoTable({ data }) {
+  if (!data || data.length === 0) return <p>No data to show.</p>
 
   return (
-    <div>
-      <div style={{ marginBottom: 10 }}>
-        <input
-          placeholder="Filter by repo name"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          style={{ marginRight: 10 }}
-        />
-        <label>Sort By:</label>
-        {['name', 'stars', 'forks', 'open_issues'].map((field) => (
-          <button key={field} onClick={() => toggleSort(field)} style={{ marginLeft: 5 }}>
-            {field} {sortBy === field ? (sortOrderAsc ? '▲' : '▼') : ''}
-          </button>
-        ))}
-      </div>
-      <table border="1" cellPadding="5" cellSpacing="0" style={{ width: '100%', textAlign: 'left' }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Stars</th>
-            <th>Forks</th>
-            <th>Open Issues</th>
+    <table border="1" cellPadding="8" cellSpacing="0">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>State</th>
+          <th>Created At</th>
+          <th>Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map(item => (
+          <tr key={item.id}>
+            <td>{item.title}</td>
+            <td>{item.state}</td>
+            <td>{new Date(item.created_at).toLocaleDateString()}</td>
+            <td>
+              <a href={item.url} target="_blank" rel="noreferrer">
+                View on GitHub
+              </a>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {sortedRepos.map((repo) => (
-            <tr key={repo.id}>
-              <td>{repo.name}</td>
-              <td>{repo.description || '--'}</td>
-              <td>{repo.stars}</td>
-              <td>{repo.forks}</td>
-              <td>{repo.open_issues}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ marginTop: 10 }}>
-        <ExportCSV data={sortedRepos} filename="repositories.csv" />
-      </div>
-    </div>
+        ))}
+      </tbody>
+    </table>
   )
 }

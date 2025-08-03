@@ -4,5 +4,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 
 router.get('/search', userController.searchUsers);
+router.get('/:username', userController.getUserByUsername);
+
 
 module.exports = router;
