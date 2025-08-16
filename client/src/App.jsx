@@ -23,24 +23,30 @@ function AppContent() {
   const isSearchPage = location.pathname === '/search'
 
   return (
-    <>
+    <div className="min-h-screen">
       {/* Header row */}
       <div
+        className="header-container"
         style={{
           display: 'flex',
           alignItems: 'center', // vertical alignment
           justifyContent: 'flex-start', // logo stays left
-          padding: '16px 24px 0 24px',
+          padding: 'var(--space-6) var(--space-8) 0 var(--space-8)',
           maxWidth: '1000px',
           margin: '0 auto',
-          position: 'relative'
+          position: 'relative',
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '0 0 var(--radius-xl) var(--radius-xl)',
+          border: '1px solid var(--border)',
+          borderTop: 'none'
         }}
       >
         <Logo/>
         
         {/* Only show search bar inline on non-home pages */}
         {!isHomePage && (
-          <div style={{ marginLeft: '340px', marginTop: '-50px', flex: 1 }}>
+          <div style={{ marginLeft: '320px', marginTop: '-40px', flex: 1, maxWidth: '500px' }}>
             <SearchBar inline />
           </div>
         )}
@@ -48,16 +54,17 @@ function AppContent() {
 
       {/* Page content */}
       <div
+        className="main-content"
         style={{
-          maxWidth: '1000px',
+          maxWidth: '1200px',
           margin: '0 auto',
-          padding: `${isSearchPage ? '0px' : isHomePage ? '160px' : '24px'} 16px 0`
+          padding: `${isSearchPage ? 'var(--space-8)' : isHomePage ? 'var(--space-20)' : 'var(--space-8)'} var(--space-6) var(--space-8)`
         }}
       >
         {/* Centered search bar on homepage */}
         {isHomePage && <SearchBar />}
 
-        <div style={{ marginTop: isHomePage ? '40px' : '20px' }}>
+        <div className="animate-fade-in" style={{ marginTop: isHomePage ? 'var(--space-10)' : 'var(--space-6)' }}>
           <Routes>
             <Route path="/" element={<HomeInfo />} />
             <Route
@@ -69,7 +76,7 @@ function AppContent() {
           </Routes>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

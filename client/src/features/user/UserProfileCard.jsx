@@ -12,75 +12,109 @@ export default function UserProfileCard({ user }) {
         display: "flex",
         flexDirection: "column", // stack items vertically
         justifyContent: "space-between",
-        margin: 12,
-        padding: 15,
-        border: "0.5px solid #ccc",
-        borderRadius: 10,
+        margin: 0,
+        padding: "var(--space-6)",
         position: "relative", // for absolute embed button
-        minHeight: 200,
+        minHeight: "240px",
+        cursor: "pointer",
       }}
+      onClick={() => navigate(`/profile/${user.username}`)}
     >
       {/* User info */}
       <div
-        style={{ display: "flex", alignItems: "flex-start", cursor: "pointer" }}
-        onClick={() => navigate(`/profile/${user.username}`)}
+        style={{ display: "flex", alignItems: "flex-start" }}
       >
         <img
           src={user.avatar}
           alt={user.username}
-          width={80}
-          height={80}
-          style={{ objectFit: "cover", borderRadius: "50%" }}
-        />{" "}
-        <div style={{ marginLeft: 16 }}>
+          style={{ 
+            width: "64px",
+            height: "64px",
+            objectFit: "cover", 
+            borderRadius: "50%",
+            border: "3px solid var(--border)",
+            boxShadow: "var(--shadow-md)"
+          }}
+        />
+        <div style={{ marginLeft: "var(--space-4)", flex: 1 }}>
           <h4
             style={{
-              margin: "4px 0 5px 0",
-              maxWidth: "150px",
+              margin: "0 0 var(--space-2) 0",
+              maxWidth: "180px",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              color: "var(--text-primary)",
+              fontSize: "1.1rem",
+              fontWeight: "600"
             }}
-            title={user.username} // so full name shows on hover
+            title={user.username}
           >
             {user.username}
-          </h4>{" "}
-          <small>
-            Repos: {user.public_repos ?? "–"} | Followers:{" "}
-            {user.followers ?? "–"}
-          </small>
+          </h4>
+          <div className="user-stats" style={{
+            display: "flex",
+            gap: "var(--space-4)",
+            fontSize: "0.875rem",
+            color: "var(--text-muted)"
+          }}>
+            <span>📦 {user.public_repos ?? "–"}</span>
+            <span>👥 {user.followers ?? "–"}</span>
+          </div>
         </div>
       </div>
-      <div>
-        <div style={{ marginLeft: 16, marginTop: 10 }}>
-          {user.bio && <p>{user.bio}</p>}
+      
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <div>
+          {user.bio && (
+            <p style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.875rem",
+              lineHeight: "1.5",
+              marginBottom: "var(--space-3)",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden"
+            }}>
+              {user.bio}
+            </p>
+          )}
+          
           {user.top_repos && user.top_repos.length > 0 && (
-            <>
-              <p>Top ⭐ Repos:</p>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <p style={{
+                fontSize: "0.875rem",
+                fontWeight: "600",
+                color: "var(--text-primary)",
+                marginBottom: "var(--space-2)"
+              }}>
+                ⭐ Top Repositories
+              </p>
+              <ul style={{ 
+                margin: 0, 
+                paddingLeft: "var(--space-4)",
+                listStyle: "none"
+              }}>
                 {user.top_repos.slice(0, 3).map((r) => (
-                  <li key={r.name}>
+                  <li key={r.name} style={{
+                    marginBottom: "var(--space-1)",
+                    fontSize: "0.8rem"
+                  }}>
+                    <span style={{ color: "var(--primary)", marginRight: "var(--space-1)" }}>▸</span>
                     <Link to={`/repo/${user.username}/${r.name}`}>
                       {r.name}
-                    </Link>{" "}
-                    ({r.stars}★)
+                    </Link>
+                    <span style={{ color: "var(--text-muted)", marginLeft: "var(--space-1)" }}>
+                      ({r.stars}★)
+                    </span>
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
-          {/* <small>Last commit: {user.last_commit || "–"}</small> */}
         </div>
       </div>
-
-      {/* Embed button row */}
-      {/* <div style={{ marginTop: 12 }}>
-        <button
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
-        >
-          Embed
-        </button>
-      </div> */}
     </div>
   );
 }

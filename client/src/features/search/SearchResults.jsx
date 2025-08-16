@@ -50,51 +50,59 @@ export default function SearchResults({ query, type }) {
   if (isLoading) return <Loading />;
 
   return (
-    <div style={{ padding: "0 16px" }}>
+    <div className="search-results animate-fade-in" style={{ padding: "0 var(--space-4)" }}>
       {/* Navbar */}
-<div style={navbarStyle}>
-  <button
-    style={{
-      ...buttonResetStyle,
-      ...(activeTab === "profiles" ? activeTabStyle : {}),
-    }}
-    onClick={() => setActiveTab("profiles")}
-  >
-    Profiles
-  </button>
-  <button
-    style={{
-      ...buttonResetStyle,
-      ...(activeTab === "repos" ? activeTabStyle : {}),
-    }}
-    onClick={() => setActiveTab("repos")}
-  >
-    Repositories
-  </button>
-</div>
+      <div className="search-tabs" style={navbarStyle}>
+        <button
+          className={activeTab === "profiles" ? "tab-active" : "tab-inactive"}
+          style={{
+            ...buttonResetStyle,
+            ...(activeTab === "profiles" ? activeTabStyle : inactiveTabStyle),
+          }}
+          onClick={() => setActiveTab("profiles")}
+        >
+          👤 Profiles
+        </button>
+        <button
+          className={activeTab === "repos" ? "tab-active" : "tab-inactive"}
+          style={{
+            ...buttonResetStyle,
+            ...(activeTab === "repos" ? activeTabStyle : inactiveTabStyle),
+          }}
+          onClick={() => setActiveTab("repos")}
+        >
+          📦 Repositories
+        </button>
+      </div>
 
       {/* Profiles Tab */}
       {activeTab === "profiles" && profiles?.users?.length > 0 && (
-        <div>
-          <div style={gridStyle}>
+        <div className="animate-slide-in">
+          <div className="grid grid-auto-fit" style={gridStyle}>
             {profiles.users.map((u) => (
               <UserProfileCard key={u.username} user={u} />
             ))}
           </div>
           {/* Pagination */}
-          <div style={paginationStyle}>
-            <button style={buttonResetStyle}
+          <div className="pagination" style={paginationStyle}>
+            <button 
+              className="pagination-btn"
+              style={{...buttonResetStyle, ...paginationButtonStyle}}
               onClick={() => setProfilePage((p) => Math.max(1, p - 1))}
               disabled={profilePage === 1}
             >
-              Previous
+              ← Previous
             </button>
-            <span>Page {profilePage}</span>
-            <button style={buttonResetStyle}
+            <span className="pagination-info" style={paginationInfoStyle}>
+              Page {profilePage}
+            </span>
+            <button 
+              className="pagination-btn"
+              style={{...buttonResetStyle, ...paginationButtonStyle}}
               onClick={() => setProfilePage((p) => p + 1)}
               disabled={!hasNextProfilePage}
             >
-              Next
+              Next →
             </button>
           </div>
         </div>
@@ -102,26 +110,32 @@ export default function SearchResults({ query, type }) {
 
       {/* Repos Tab */}
       {activeTab === "repos" && repos?.repositories?.length > 0 && (
-        <div>
-          <div style={gridStyle}>
+        <div className="animate-slide-in">
+          <div className="grid grid-auto-fit" style={gridStyle}>
             {repos.repositories.map((r) => (
               <RepoCard key={r.id} repo={r} />
             ))}
           </div>
           {/* Pagination */}
-          <div style={paginationStyle}>
-            <button style={buttonResetStyle}
+          <div className="pagination" style={paginationStyle}>
+            <button 
+              className="pagination-btn"
+              style={{...buttonResetStyle, ...paginationButtonStyle}}
               onClick={() => setRepoPage((p) => Math.max(1, p - 1))}
               disabled={repoPage === 1}
             >
-              Previous
+              ← Previous
             </button>
-            <span>Page {repoPage}</span>
-            <button style={buttonResetStyle}
+            <span className="pagination-info" style={paginationInfoStyle}>
+              Page {repoPage}
+            </span>
+            <button 
+              className="pagination-btn"
+              style={{...buttonResetStyle, ...paginationButtonStyle}}
               onClick={() => setRepoPage((p) => p + 1)}
               disabled={!hasNextRepoPage}
             >
-              Next
+              Next →
             </button>
           </div>
         </div>
@@ -131,41 +145,80 @@ export default function SearchResults({ query, type }) {
       {!isLoading &&
         ((activeTab === "profiles" && !profiles?.users?.length) ||
           (activeTab === "repos" && !repos?.repositories?.length)) && (
-          <p>No results found for "{query}"</p>
+          <div className="no-results" style={noResultsStyle}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-4)' }}>🔍</div>
+            <h3>No results found</h3>
+            <p>We couldn't find any {activeTab} matching "{query}"</p>
+            <p className="text-muted">Try adjusting your search terms or browse different categories</p>
+          </div>
         )}
     </div>
   );
 }
 
 const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-  gap: "16px",
-  marginTop: "12px",
+  marginTop: "var(--space-6)",
 };
 
 const paginationStyle = {
-  marginTop: "16px",
+  marginTop: "var(--space-8)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  gap: "12px",
+  gap: "var(--space-4)",
 };
 
 const navbarStyle = {
   display: "flex",
-  gap: "8px",
-  marginBottom: "16px",
+  gap: "var(--space-2)",
+  marginBottom: "var(--space-6)",
+  padding: "var(--space-2)",
+  background: "var(--bg-secondary)",
+  borderRadius: "var(--radius-lg)",
+  border: "1px solid var(--border)",
+  boxShadow: "var(--shadow)",
 };
 
 const buttonResetStyle = {
   outline: "none",
   cursor: "pointer",
+  transition: "all 0.2s ease",
 };
 
 const activeTabStyle = {
-  ...buttonResetStyle,
-  background: "#007bff",
-  color: "#fff",
-  borderColor: "#007bff",
+  background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)",
+  color: "white",
+  borderColor: "var(--primary)",
+  transform: "translateY(-2px)",
+  boxShadow: "var(--shadow-md)",
+};
+
+const inactiveTabStyle = {
+  background: "transparent",
+  color: "var(--text-secondary)",
+  borderColor: "transparent",
+};
+
+const paginationButtonStyle = {
+  padding: "var(--space-3) var(--space-6)",
+  background: "var(--bg-secondary)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  color: "var(--text-primary)",
+  fontWeight: "500",
+};
+
+const paginationInfoStyle = {
+  padding: "var(--space-3) var(--space-4)",
+  background: "var(--bg-tertiary)",
+  borderRadius: "var(--radius)",
+  color: "var(--text-primary)",
+  fontWeight: "500",
+  border: "1px solid var(--border)",
+};
+
+const noResultsStyle = {
+  textAlign: "center",
+  padding: "var(--space-16) var(--space-8)",
+  color: "var(--text-secondary)",
 };

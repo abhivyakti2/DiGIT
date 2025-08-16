@@ -30,45 +30,58 @@ export default function SearchBar() {
 
   return (
     <div
+      className="search-container"
       style={{
         textAlign: 'center',
-        marginTop: 50,
+        marginTop: 'var(--space-12)',
         display: 'flex',
         justifyContent: 'center',
-        gap: '12px'
+        gap: 'var(--space-4)',
+        alignItems: 'center'
       }}
     >
       {/* Input + clear */}
-      <div style={{ position: 'relative' }}>
+      <div className="search-input-container" style={{ position: 'relative' }}>
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Search users or repos"
+          placeholder="Search users or repositories..."
           style={{
             ...fieldStyle,
-            width: '220px',
-            paddingRight: '28px',
-            backgroundColor: '#1a1a1a'
+            width: '280px',
+            paddingRight: 'var(--space-10)',
+            fontSize: '1rem',
+            height: '48px',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)'
           }}
         />
         {value && (
           <button
             onClick={clearInput}
             aria-label="Clear"
+            className="clear-button"
             style={{
               ...buttonResetStyle,
               position: 'absolute',
-              right: '6px',
+              right: 'var(--space-3)',
               top: '50%',
               transform: 'translateY(-50%)',
-              fontSize: '14px',
-              color: '#555',
-              padding: 0,
+              fontSize: '1rem',
+              color: 'var(--text-muted)',
+              padding: 'var(--space-1)',
               lineHeight: 1,
               background: 'transparent',
-              border: 'none'
+              border: 'none',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             ✖
@@ -81,13 +94,17 @@ export default function SearchBar() {
         value={type}
         onChange={(e) => setType(e.target.value)}
         onKeyDown={onKeyDown}
+        className="search-select"
         style={{
           ...fieldStyle,
-          width: '220px',
-          cursor: 'pointer'
+          width: '160px',
+          cursor: 'pointer',
+          fontSize: '1rem',
+          height: '48px',
+          background: 'var(--bg-secondary)',
+          border: '2px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)'
         }}
-        onFocus={(e) => (e.target.style.borderColor = '#007bff')}
-        onBlur={(e) => (e.target.style.borderColor = '#007bff')}
       >
         <option value="all">All</option>
         <option value="profiles">Profiles</option>
@@ -95,7 +112,13 @@ export default function SearchBar() {
       </select>
 
       {/* Search button */}
-      <button onClick={doSearch} style={primaryButtonStyle}>
+      <button onClick={doSearch} className="btn-primary" style={{
+        ...primaryButtonStyle,
+        height: '48px',
+        padding: '0 var(--space-8)',
+        fontSize: '1rem',
+        fontWeight: '600'
+      }}>
         Search
       </button>
     </div>
@@ -106,25 +129,27 @@ export default function SearchBar() {
 
 const buttonResetStyle = {
   outline: 'none',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
 }
 
 const primaryButtonStyle = {
   ...buttonResetStyle,
-  padding: '6px 16px',
-  borderRadius: '4px',
- 
+  padding: 'var(--space-3) var(--space-6)',
+  borderRadius: 'var(--radius)',
+  background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+  border: '2px solid var(--primary)',
   color: '#fff',
-  height: '34px'
+  boxShadow: 'var(--shadow-lg)'
 }
 
 const fieldStyle = {
-  padding: '6px 10px',
-  fontSize: '14px',
-  border: '1px solid #646cff', // match button border color
-  borderRadius: '4px',
+  padding: 'var(--space-3) var(--space-4)',
+  fontSize: '0.875rem',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
   outline: 'none',
   boxSizing: 'border-box',
-  height: '34px', // match button height
-  lineHeight: '20px' // makes text vertically centered
+  lineHeight: '1.5',
+  transition: 'all 0.2s ease'
 }
