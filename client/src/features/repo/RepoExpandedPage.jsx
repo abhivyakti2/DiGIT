@@ -1,38 +1,46 @@
-import React, { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import React, { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   useRepoDetails,
   useRepoTree,
   useRepoCommitActivity,
   useRepoContributors,
-} from '../../api/github'
-import CodeExplorer from '../code/CodeExplorer'
-import CommitHistoryChart from './CommitHistoryChart'
-import RepoTable from './RepoTable'
-import ExportCSV from './ExportCSV'
-// import Tooltip from '../../components/Tooltip'
+} from "../../api/github";
+import CodeExplorer from "../code/CodeExplorer";
+import CommitHistoryChart from "./CommitHistoryChart";
+import RepoTable from "./RepoTable";
+
+import ExportCSV from "./ExportCSV";
 
 export default function RepoExpandedPage() {
-  const { owner, repo } = useParams()
-  const { data, isLoading: loadingDetails } = useRepoDetails({ owner, repo })
-  const [tab, setTab] = useState('code')
+  const { owner, repo } = useParams();
+  const { data, isLoading: loadingDetails } = useRepoDetails({ owner, repo });
+  const [tab, setTab] = useState("code");
 
   // Load data on demand for tabs
-  const { data: treeData } = useRepoTree({ owner, repo }, { enabled: tab === 'code' })
-  const { data: commitsData } = useRepoCommits({ owner, repo }, { enabled: tab === 'commits' })
-  const { data: issuesData } = useRepoIssues({ owner, repo }, { enabled: tab === 'issues' })
-  const { data: contributorsData } = useRepoContributors({ owner, repo }, { enabled: tab === 'contributors' })
+  // const { data: treeData } = useRepoTree(owner, repo, "main", {
+  //   enabled: tab === "code",
+  // });
+  const { data: commitsData } = useRepoCommitActivity(
+    { owner, repo },
+    { enabled: tab === "commits" }
+  );
+  const { data: contributorsData } = useRepoContributors(
+    { owner, repo },
+    { enabled: tab === "contributors" }
+  );
 
-  // State for expanding folders or viewing code:
-  const [selectedFile, setSelectedFile] = React.useState(null)
+  const [selectedFile, setSelectedFile] = React.useState(null);
 
-  if (loadingDetails) return <p>Loading repo details...</p>
-  if (!data) return <p>No repository data found.</p>
+  if (loadingDetails) return <p>Loading repo details...</p>;
+  if (!data) return <p>No repository data found.</p>;
 
-  const { stars, forks, created_at, readme, website } = data
+  const { stars, forks, created_at, readme, website, issues } = data;
 
   function handleFileSelect(filePath) {
-    setSelectedFile(filePath)
+    setSelectedFile(filePath);
   }
 
   return (
@@ -40,63 +48,118 @@ export default function RepoExpandedPage() {
       <h1>{repo}</h1>
       <p>{data.description}</p>
       <p>
-        ⭐ Stars: {stars} | 🍴 Forks: {forks} | Created: {new Date(created_at).toLocaleDateString()}
+        ⭐ Stars: {stars} | 🍴 Forks: {forks} | Created:{" "}
+        {new Date(created_at).toLocaleDateString()}
       </p>
       {website && (
         <p>
-          Project URL:{' '}
+          Project URL:{" "}
           <a href={website} target="_blank" rel="noreferrer">
             {website}
           </a>
         </p>
       )}
-      {readme && (
-        <div>
-          <h3>README</h3>
-          <pre style={{ whiteSpace: 'pre-wrap', background: '#f0f0f0', padding: 8 }}>{readme.slice(0, 800)}...</pre>
-        </div>
-      )}
-
+      
       <div style={{ marginTop: 20 }}>
-        <button onClick={() => setTab('code')} disabled={tab === 'code'}>
+        <button
+          onClick={() => setTab("code")}
+          disabled={tab === "code"}
+          style={{
+            marginRight: 10,
+            outline: "none",
+            color: tab === "code" ? "white" : "gray",
+          }}
+        >
           Code
         </button>
-        <button onClick={() => setTab('commits')} disabled={tab === 'commits'}>
+        <button
+          onClick={() => setTab("commits")}
+          disabled={tab === "commits"}
+          style={{
+            marginRight: 10,
+            outline: "none",
+            color: tab === "commits" ? "white" : "gray",
+          }}
+        >
           Commits History
         </button>
-        <button onClick={() => setTab('issues')} disabled={tab === 'issues'}>
+        <button
+          onClick={() => setTab("issues")}
+          disabled={tab === "issues"}
+          style={{
+            marginRight: 10,
+            outline: "none",
+            color: tab === "issues" ? "white" : "gray",
+          }}
+        >
           Open Issues
         </button>
-        <button onClick={() => setTab('contributors')} disabled={tab === 'contributors'}>
+        <button
+          onClick={() => setTab("contributors")}
+          disabled={tab === "contributors"}
+          style={{
+            marginRight: 10,
+            outline: "none",
+            color: tab === "contributors" ? "white" : "gray",
+          }}
+        >
           Contributors
+        </button>
+        <button
+          onClick={() => setTab("readme")}
+          disabled={tab === "readme"}
+          style={{
+            marginRight: 10,
+            outline: "none",
+            color: tab === "readme" ? "white" : "gray",
+          }}
+        >
+          README
         </button>
       </div>
 
       <div style={{ marginTop: 20 }}>
-        {tab === 'code' && (
+        {tab === "code" && (
           <>
-            <CodeExplorer treeData={treeData?.tree || []} onFileSelect={handleFileSelect} />
-            {/* Implement FileViewer & AIFileQA somewhere below here when selectedFile is set */}
+            {/* <CodeExplorer
+              treeData={treeData?.tree || []}
+              onFileSelect={handleFileSelect}
+            /> */}
+            {/* TODO: FileViewer & AIFileQA if selectedFile */}
           </>
         )}
-        {tab === 'commits' && <CommitHistoryChart data={commitsData?.activity || []} />}
-        {tab === 'issues' && <RepoTable data={issuesData || []} />}
-        {tab === 'contributors' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {contributorsData?.contributors?.map(c => (
-              <Tooltip key={c.username} text={c.username}>
+        {tab === "commits" && <CommitHistoryChart data={commitsData || []} />}
+        {tab === "issues" && <RepoTable data={issues || []} />}
+        {tab === "contributors" && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {contributorsData?.map((c) => (
+              <div key={c.username} style={{ textAlign: "center" }}>
                 <Link to={`/profile/${c.username}`}>
                   <img
                     src={c.avatar}
                     alt={c.username}
-                    style={{ width: 50, height: 50, borderRadius: '50%', cursor: 'pointer' }}
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                    }}
                   />
                 </Link>
-              </Tooltip>
+                <div>{c.username}</div>
+              </div>
             ))}
+          </div>
+        )}
+        {tab === "readme" && (
+          <div style={{ background: "#333839ff", padding: 16, borderRadius: 8 }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {readme || "No README found."}
+            </ReactMarkdown>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
+ 

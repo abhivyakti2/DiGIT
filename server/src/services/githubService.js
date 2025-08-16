@@ -1,7 +1,10 @@
 // backend/services/githubService.js
 const apiClient = require("../utils/apiClient");
 
-exports.searchUsers = async (query, page = 1, perPage = 5) => {
+
+//                                     -----------------------SEARCH BAR USERS RESULT------------------------
+
+exports.searchUsers = async (query, page = 1, perPage = 6) => {
   const { data } = await apiClient.get(`/search/users`, {
     params: {
       q: query,
@@ -24,6 +27,24 @@ exports.searchUsers = async (query, page = 1, perPage = 5) => {
     perPage: perPage,
   };
 };
+
+exports.searchRepositories = async (query, page = 1, perPage = 5) => {
+    const { data } = await apiClient.get(`/search/repositories`, {
+      params: {
+        q: query,
+        per_page: perPage,
+        page: page,
+      },
+    });
+
+    return {
+      repositories: data.items,
+      totalCount: data.total_count,
+      currentPage: page,
+      perPage,
+    };
+  };
+
 
 exports.getUserDetails = async (username) => {
   const { data } = await apiClient.get(`/users/${username}`);
@@ -66,22 +87,6 @@ exports.getUserRepos = async (username, { filterByName, sortBy } = {}) => {
   return repos;
 };
 
-exports.searchRepositories = async (query, page = 1, perPage = 5) => {
-    const { data } = await apiClient.get(`/search/repositories`, {
-      params: {
-        q: query,
-        per_page: perPage,
-        page: page,
-      },
-    });
-
-    return {
-      repositories: data.items,
-      totalCount: data.total_count,
-      currentPage: page,
-      perPage,
-    };
-  };
 
 
 
@@ -125,51 +130,42 @@ exports.getRepoIssues = async (owner, repo) => {
   return data.filter((i) => !i.pull_request);
 };
 
-// exports.searchCodeInRepo = async (query, owner, repo, page = 1, perPage = 5) => {
-//   const { data } = await apiClient.get(`/search/code`, {
-//     params: {
-//       q: `${query}+repo:${owner}/${repo}`,
-//       per_page: perPage,
-//       page: page,
-//     },
-//   });
+exports.getRepoInfo = async (owner, repo) => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}`);
+  return data;
+};
 
-//   return {
-//     items: data.items,
-//     totalCount: data.total_count,
-//     currentPage: page,
-//     perPage,
-//   };
-// };
+exports.getRepoLanguages = async (owner, repo) => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/languages`);
+  return data;
+};
 
-exports.getCommitActivity = async (owner, repo, page = 1) => {
+exports.getRepoCommitActivity = async (owner, repo) => {
   try {
-    const { data } = await apiClient.get(`/repos/${owner}/${repo}/commits`, {
-      params: {
-        per_page: 10,
-        page: page,
-      },
-    });
+    const { data, status } = await apiClient.get(
+      `/repos/${owner}/${repo}/stats/commit_activity`
+    );
 
-    // Optional: Clean up each commit object to return only relevant info
-    const commits = data.map(commit => ({
-      sha: commit.sha,
-      message: commit.commit.message,
-      authorName: commit.commit.author.name,
-      authorEmail: commit.commit.author.email,
-      date: commit.commit.author.date,
-      login: commit.author?.login || null,
-      avatar_url: commit.author?.avatar_url || null,
-      html_url: commit.html_url
+    if (status === 202 || !data) {
+      return [];
+    }
+
+    const activity = data.map(week => ({
+      week: new Date(week.week * 1000).toISOString().slice(0, 10), // e.g. "2025-08-11"
+      total: week.total,
+      days: week.days,
     }));
 
-    return commits;
+    return activity;
 
   } catch (error) {
-    console.error('Error in getCommitActivity:', error.message);
+    console.error('Error in getRepoCommitActivity:', error.message);
     throw error;
   }
 };
+
+
+
 
 
 
@@ -188,9 +184,33 @@ exports.fetchRepoTree = async (owner, repo, branch = 'main') => {
   return treeData.tree; // flat array: [{ path, type: 'blob' | 'tree', mode }]
 };
 
+exports.getRepoTopics = async (owner, repo) => {
+  const { data } = await apiClient.get(`/repos/${owner}/${repo}/topics`, {
+    headers: { Accept: "application/vnd.github.mercy-preview+json" } // Required for topics API
+  });
+  return data.names || [];
+};
 
 
 exports.getFileContent = async (owner, repo, path, branch = 'main') => {
   const { data } = await apiClient.get(`/repos/${owner}/${repo}/contents/${path}?ref=${branch}`);
   return Buffer.from(data.content, 'base64').toString('utf8');
 };
+
+
+// exports.searchCodeInRepo = async (query, owner, repo, page = 1, perPage = 5) => {
+//   const { data } = await apiClient.get(`/search/code`, {
+//     params: {
+//       q: `${query}+repo:${owner}/${repo}`,
+//       per_page: perPage,
+//       page: page,
+//     },
+//   });
+
+//   return {
+//     items: data.items,
+//     totalCount: data.total_count,
+//     currentPage: page,
+//     perPage,
+//   };
+// };

@@ -1,5 +1,18 @@
-// Logo.jsx
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import logo from '../assets/Logo.png'
+
 export default function Logo() {
-  return <img src="/logo.svg" alt="DiGIT Logo" width={120} />
+  const navigate = useNavigate()
+
+  return (
+    <img
+      src={logo}
+      alt="DiGIT Logo"
+      width={120}
+      style={{ cursor: 'pointer' }}
+      
+      onClick={() => navigate('/')}
+    />
+  )
 }

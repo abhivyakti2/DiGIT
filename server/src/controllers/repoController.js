@@ -31,7 +31,6 @@ exports.getUserRepos = async (req, res, next) => {
   }
 };
 
-
 exports.searchRepositories = async (req, res, next) => {
   try {
     const { q, page = 1, perPage = 5 } = req.query;
@@ -42,55 +41,45 @@ exports.searchRepositories = async (req, res, next) => {
 
     const result = await githubService.searchRepositories(q, page, perPage);
 
+    const reposWithExtras = await Promise.all(
+      result.repositories.map(async r => {
+        let topics = [];
+        let languages = [];
+
+        try {
+          topics = await githubService.getRepoTopics(r.owner.login, r.name);
+        } catch {}
+
+        try {
+          const langs = await githubService.getRepoLanguages(r.owner.login, r.name);
+          languages = Object.keys(langs);
+        } catch {}
+
+        return {
+          id: r.id,
+          name: r.name,
+          description: r.description,
+          stars: r.stargazers_count,
+          forks: r.forks_count,
+          language: r.language,
+          languages,
+          topics,
+          url: r.html_url,
+          owner: r.owner?.login,
+          updated_at: r.updated_at
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
       query: q,
       totalCount: result.totalCount,
       currentPage: result.currentPage,
       perPage: result.perPage,
-      repositories: result.repositories.map(r => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        stars: r.stargazers_count,
-        forks: r.forks_count,
-        language: r.language,
-        url: r.html_url,
-        owner: r.owner?.login,
-        updated_at: r.updated_at,
-      })),
+      repositories: reposWithExtras
     });
   } catch (err) {
     next(err);
   }
 };
-
-
-// exports.searchCodeInRepo = async (req, res, next) => {
-//   try {
-//     const { owner, repo, q, page = 1, perPage = 5 } = req.query;
-
-//     if (!q || !owner || !repo) {
-//       return res.status(400).json({ success: false, error: 'Query (q), owner, and repo are required.' });
-//     }
-
-//     const result = await githubService.searchCodeInRepo(q, owner, repo, page, perPage);
-
-//     res.status(200).json({
-//       success: true,
-//       query: q,
-//       totalCount: result.totalCount,
-//       currentPage: result.currentPage,
-//       perPage: result.perPage,
-//       results: result.items.map(item => ({
-//         name: item.name,
-//         path: item.path,
-//         repository: item.repository.full_name,
-//         html_url: item.html_url,
-//         score: item.score,
-//       })),
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };

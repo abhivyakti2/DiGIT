@@ -4,29 +4,37 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4444/api';
 
-export function useSearchProfiles(q) {
+export function useSearchProfiles({ query, page = 1, perPage = 6 }) {
   return useQuery({
-    queryKey: ['searchProfiles', q],
+    queryKey: ['searchProfiles', query, page],
     queryFn: async () => {
-      if (!q) return [];
-      const res = await axios.get(`${API_URL}/users/search`, { params: { q } });
-      return res.data.users || [];
+      if (!query) return { users: [], totalCount: 0 };
+      const res = await axios.get(`${API_URL}/users/search`, {
+        params: { q: query, page, perPage },
+      });
+      return res.data || { users: [], totalCount: 0 };
     },
-    enabled: !!q,
+    enabled: !!query,
   });
 }
 
-export function useSearchRepos(q) {
+
+export function useSearchRepos( {query, page = 1, perPage = 6} ) {
   return useQuery({
-    queryKey: ['searchRepos', q],
+    queryKey: ['searchRepos', query, page],
     queryFn: async () => {
-      if (!q) return [];
-      const res = await axios.get(`${API_URL}/repos/search`, { params: { q } });
-      return res.data.repositories || [];
+      if (!query) return { repositories: [], totalCount: 0 };
+
+      const res = await axios.get(`${API_URL}/repos/search`, {
+        params: { q: query, page, perPage },
+      });
+
+      return res.data || { repositories: [], totalCount: 0 };
     },
-    enabled: !!q,
+    enabled: !!query,
   });
 }
+
 
 export function useUserRepos(username, { filterByName, sortBy } = {}) {
   return useQuery({
@@ -40,7 +48,7 @@ export function useUserRepos(username, { filterByName, sortBy } = {}) {
   });
 }
 
-export function useRepoCommitActivity(owner, repo) {
+export function useRepoCommitActivity({owner, repo}) {
   return useQuery({
     queryKey: ['commitActivity', owner, repo],
     queryFn: async () => {
@@ -51,7 +59,7 @@ export function useRepoCommitActivity(owner, repo) {
   });
 }
 
-export function useRepoContributors(owner, repo) {
+export function useRepoContributors({owner, repo}) {
   return useQuery({
     queryKey: ['contributors', owner, repo],
     queryFn: async () => {
@@ -62,15 +70,22 @@ export function useRepoContributors(owner, repo) {
   });
 }
 
-export function useRepoDetails(owner, repo) {
+export function useRepoDetails({owner, repo}) {
   return useQuery({
     queryKey: ['repoDetails', owner, repo],
     queryFn: async () => {
       const res = await axios.get(`${API_URL}/details/${owner}/${repo}`);
       return {
+        description: res.data.description,
+        languages: res.data.languages,
         readmeHtml: res.data.readme,
         commits: res.data.commits,
-        openIssues: res.data.open_issues,
+        issues: res.data.open_issues,   
+        readme: res.data.readme,  
+        stars: res.data.stars,
+        forks: res.data.forks,
+        created_at: res.data.created_at,
+        website: res.data.website
       };
     },
     enabled: !!owner && !!repo,

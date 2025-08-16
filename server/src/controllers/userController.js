@@ -3,7 +3,7 @@ const githubService = require('../services/githubService');
 
 exports.searchUsers = async (req, res, next) => {
   try {
-    const { q, page = 1, per_page = 5 } = req.query;
+    const { q, page = 1, per_page = 6 } = req.query;
     if (!q) return res.status(400).json({ success: false, error: "Missing search query" });
 
     const { users: searchResults, totalCount, currentPage, perPage } =
@@ -32,6 +32,8 @@ exports.searchUsers = async (req, res, next) => {
           url: profile.html_url,
           id: profile.id,
           type: profile.type,
+          public_repos: profile.public_repos,   // <-- add
+          followers: profile.followers,         // <-- add
           mostStarredRepo: mostStarredRepo?.name || null,
           repoLanguages: [...languageSet],
           latestCommitDate: recentCommit || null,
@@ -54,7 +56,6 @@ exports.searchUsers = async (req, res, next) => {
 
 
 
-
 exports.getUserByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;
@@ -73,6 +74,19 @@ exports.getUserByUsername = async (req, res, next) => {
       ? (await githubService.getRepoCommits(username, repos[0].name))?.[0]?.commit?.author?.date
       : null;
 
+    const formattedRepos = repos.map(r => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      stars: r.stargazers_count,
+      forks: r.forks_count,
+      open_issues: r.open_issues_count,
+      url: r.html_url,
+      language: r.language,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    }));
+
     res.status(200).json({
       success: true,
       user: {
@@ -85,6 +99,7 @@ exports.getUserByUsername = async (req, res, next) => {
         mostStarredRepo: mostStarredRepo?.name || null,
         repoLanguages: [...languageSet],
         latestCommitDate: recentCommit || null,
+        repositories: formattedRepos,  // 👈 Added here
       }
     });
   } catch (err) {
