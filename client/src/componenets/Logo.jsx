@@ -9,8 +9,9 @@ export default function Logo() {
     <img
       src={logo}
       alt="DiGIT Logo"
-      width={120}
-      style={{ cursor: 'pointer' }}
+      width={130}
+      style={{ cursor: 'pointer',  position: 'relative',
+      top: '-10px' }}
       
       onClick={() => navigate('/')}
     />

@@ -1,19 +1,43 @@
 const githubService = require('../services/githubService');
 const axios = require('axios');
-
 exports.getFileContent = async (req, res) => {
   try {
-    const { owner, repo, path, branch = 'main' } = req.query;
+    const { owner, repo, path } = req.query;
+    let branch = req.query.branch || 'main';
     if (!owner || !repo || !path) {
       return res.status(400).json({ message: 'owner, repo, and path are required' });
     }
 
-    const content = await githubService.getFileContent(owner, repo, path, branch);
-    res.json({ success: true, content });
+    // Try main and master just like the tree endpoint
+    const branchesToTry = [branch, branch === 'main' ? 'master' : 'main'];
+    let content = null;
+    let successBranch = null;
+    let lastError = null;
+
+    for (const b of branchesToTry) {
+      try {
+        content = await githubService.getFileContent(owner, repo, path, b);
+        successBranch = b;
+        break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    if (content !== null) {
+      return res.json({ success: true, branch: successBranch, content });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: `File not found in branches: ${branchesToTry.join(', ')} for path ${path}`,
+        error: lastError ? lastError.message : undefined
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch file content', error: err.message });
   }
 };
+
 
 exports.getFileContentAndAskAI = async (req, res) => {
   try {

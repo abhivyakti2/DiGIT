@@ -19,7 +19,7 @@ export function useSearchProfiles({ query, page = 1, perPage = 6 }) {
 }
 
 
-export function useSearchRepos( {query, page = 1, perPage = 6} ) {
+export function useSearchRepos( {query, page = 1, perPage = 100} ) {
   return useQuery({
     queryKey: ['searchRepos', query, page],
     queryFn: async () => {
@@ -48,14 +48,23 @@ export function useUserRepos(username, { filterByName, sortBy } = {}) {
   });
 }
 
-export function useRepoCommitActivity({owner, repo}) {
+
+export function useRepoCommitActivity({ owner, repo }, options = {}) {
   return useQuery({
     queryKey: ['commitActivity', owner, repo],
     queryFn: async () => {
       const res = await axios.get(`${API_URL}/commits/${owner}/${repo}/activity`);
-      return res.data.activity || [];
+      const activity = res.data.activity || [];
+      // If data is empty, throw to trigger a retry by react-query!
+      if (Array.isArray(activity) && activity.length === 0) {
+        throw new Error('Commit activity empty - retrying...');
+      }
+      return activity;
     },
     enabled: !!owner && !!repo,
+    retry: 4, // Try up to 5 times total (1 run + 4 retries)
+    retryDelay: attemptIndex => 1200 + attemptIndex * 800, // exponential backoff-ish, adjust as needed
+    ...options
   });
 }
 
@@ -89,6 +98,35 @@ export function useRepoDetails({owner, repo}) {
       };
     },
     enabled: !!owner && !!repo,
+  });
+}
+
+
+export function useRepoCommits({ owner, repo, page = 1, perPage = 10 }, options) {
+  return useQuery({
+    queryKey: ['repoCommits', owner, repo, page, perPage],
+    queryFn: async () => {
+      const res = await axios.get(`${API_URL}/details/${owner}/${repo}/commits`, {
+        params: { page, per_page: perPage }
+      });
+      return res.data;
+    },
+    ...options,
+    enabled: !!owner && !!repo && (options?.enabled ?? true)
+  });
+}
+
+export function useRepoIssues({ owner, repo, page = 1, perPage = 10 }, options) {
+  return useQuery({
+    queryKey: ['repoIssues', owner, repo, page, perPage],
+    queryFn: async () => {
+      const res = await axios.get(`${API_URL}/details/${owner}/${repo}/issues`, {
+        params: { page, per_page: perPage }
+      });
+      return res.data;
+    },
+    ...options,
+    enabled: !!owner && !!repo && (options?.enabled ?? true)
   });
 }
 

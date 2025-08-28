@@ -1,94 +1,153 @@
-import React, { useState, useMemo } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useUserDetails } from '../../api/github'
+import React, { useState, useMemo } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useUserDetails } from "../../api/github";
+import RepoCard from "../repo/RepoCard"; // Make sure this is imported
 
 export default function UserExpandedProfile() {
-  const { username } = useParams()
-  const navigate = useNavigate()
-  const { data, isLoading, error } = useUserDetails(username)
+  const { username } = useParams();
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useUserDetails(username);
 
-  const [filter, setFilter] = useState('')
-  const [sortBy, setSortBy] = useState('stars')
-  const [page, setPage] = useState(1)
-  const perPage = 9
+  const [filter, setFilter] = useState("");
+  const [sortBy, setSortBy] = useState("stars");
+  const [page, setPage] = useState(1);
+  const perPage = 9;
 
+  // Filtering, sorting and paging
   const filteredRepos = useMemo(() => {
-    let filtered = data?.repositories || []
+    let filtered = data?.repositories || [];
     if (filter) {
       filtered = filtered.filter(repo =>
         repo.name.toLowerCase().includes(filter.toLowerCase())
-      )
+      );
     }
-    if (sortBy === 'name') {
-      filtered.sort((a, b) => a.name.localeCompare(b.name))
+    if (sortBy === "name") {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      filtered.sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0))
+      filtered.sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0));
     }
-    return filtered
-  }, [data?.repositories, filter, sortBy])
+    return filtered;
+  }, [data?.repositories, filter, sortBy]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredRepos.length / perPage)
-  const paginatedRepos = filteredRepos.slice((page - 1) * perPage, page * perPage)
+  const totalPages = Math.ceil(filteredRepos.length / perPage);
+  const paginatedRepos = filteredRepos.slice((page - 1) * perPage, page * perPage);
 
-  if (isLoading) return <p>Loading user profile...</p>
-  if (error) return <p>Error loading user profile.</p>
-  if (!data) return <p>No data found.</p>
+  // States
+  if (isLoading) return <p>Loading user profile...</p>;
+  if (error) return <p>Error loading user profile.</p>;
+  if (!data) return <p>No data found.</p>;
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px' }}>
-
-      {/* 🧭 Navbar with Back Link */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px'
-      }}>
+    <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px" }}>
+      {/* Navbar with Back Link */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px"
+        }}
+      >
         
       </div>
-
-      {/* 👤 User Info */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+      {/* User Info */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
         <img
           src={data.avatar}
           alt={`${data.username}'s avatar`}
-          style={{ width: '80px', height: '80px', borderRadius: '50%', marginRight: '16px' }}
+          style={{
+            width: "80px",
+            height: "80px",
+            borderRadius: "50%",
+            marginRight: "16px",
+            border: "1px solid var(--border)"
+          }}
         />
         <div>
-          <h2 style={{ margin: '0', color: '#fff' }}>{data.username}</h2>
+          <h2 style={{ margin: "0", color: "#fff" }}>{data.username}</h2>
           {data.bio && (
-            <p style={{ margin: '6px 0 0', color: '#aaa' }}>{data.bio}</p>
+            <p style={{ margin: "6px 0 0", color: "#aaa" }}>{data.bio}</p>
           )}
-        </div>
+           <div style={{
+      display: 'flex',
+      gap: '32px',
+      marginBottom: '8px'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.4rem' }}>{data.followers ?? 0}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Followers</div>
       </div>
-
-      {/* 🔍 Controls & Heading */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: '60px', marginBottom: '16px',
-        alignItems: 'center',
-        margin: '16px 0'
-      }}>
-<h2 style={{ color: '#fff' }}>Repositories</h2>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.4rem' }}>{data.following ?? 0}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Following</div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.4rem' }}>{data.public_repos ?? 0}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Repos</div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+          {Array.isArray(data.repoLanguages)
+            ? data.repoLanguages.slice(0,3).join(', ')
+            : '—'}
+        </div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Top Languages</div>
+      </div>
+      {data.location && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            {data.location}
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Location</div>
+        </div>
+      )}
+      {data.website && (
+        <div style={{ textAlign: 'center' }}>
+          <a href={data.website} target="_blank" rel="noopener noreferrer"
+             style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem', wordBreak: 'break-all' }}>
+            Website
+          </a>
+          <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}></div>
+        </div>
+      )}
+    </div>
+    {/* Latest Commit Date */}
+    {data.latestCommitDate && (
+      <div style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginTop: '4px' }}>
+        Latest commit: {new Date(data.latestCommitDate).toLocaleDateString()}
+      </div>
+    )}
+  </div>
+      </div>
+      {/* Controls & Heading */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "60px",
+          alignItems: "center",
+          marginBottom: "16px"
+        }}
+      >
+        <h2 style={{ color: "#fff" }}>Repositories</h2>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
             style={{
-              padding: '8px 24px 8px 8px', // extra right padding for arrow
-              fontSize: '14px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              appearance: 'none',
-              backgroundColor: '#1a1a1a',
-              color: '#fff',
+              padding: "8px 24px 8px 8px",
+              fontSize: "14px",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              appearance: "none",
+              backgroundColor: "#1a1a1a",
+              color: "#fff",
               backgroundImage:
-                'linear-gradient(45deg, transparent 50%, #ccc 50%), linear-gradient(135deg, #ccc 50%, transparent 50%)',
-              backgroundPosition: 'calc(100% - 12px) calc(1em + 2px), calc(100% - 8px) calc(1em + 2px)',
-              backgroundSize: '5px 5px, 5px 5px',
-              backgroundRepeat: 'no-repeat'
+                "linear-gradient(45deg, transparent 50%, #ccc 50%), linear-gradient(135deg, #ccc 50%, transparent 50%)",
+              backgroundPosition:
+                "calc(100% - 12px) calc(1em + 2px), calc(100% - 8px) calc(1em + 2px)",
+              backgroundSize: "5px 5px, 5px 5px",
+              backgroundRepeat: "no-repeat"
             }}
           >
             <option value="stars">Stars</option>
@@ -101,122 +160,94 @@ export default function UserExpandedProfile() {
             placeholder="Filter repos by name"
             value={filter}
             onChange={e => {
-              setPage(1) // reset to first page when filtering
-              setFilter(e.target.value)
+              setPage(1);
+              setFilter(e.target.value);
             }}
             style={{
-              width: '180px',
-              padding: '8px',
-              fontSize: '14px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
+              width: "180px",
+              padding: "8px",
+              fontSize: "14px",
+              border: "1px solid #ccc",
+              borderRadius: "4px"
             }}
           />
         </div>
       </div>
-
-      {/* 📦 Repository Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-        gap: '16px'
-      }}>
+      {/* Repository Grid using RepoCard */}
+      <div className="grid grid-auto-fit" style={{ display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-6)" }}>
         {paginatedRepos.map(repo => (
-          <div
+          // If api doesn't provide repo.owner, fallback to username
+          <RepoCard
             key={repo.id}
-            style={{
-              padding: '12px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              backgroundColor: '#1a1a1a',
-              transition: 'background-color 0.25s, border-color 0.25s'
+            repo={{
+              ...repo,
+              owner: repo.owner || data.username
             }}
-            className="repo-card"
-          >
-            <Link
-              to={`/repo/${username}/${repo.name}`}
-              style={{
-                fontWeight: 'bold',
-                color: '#0366d6',
-                textDecoration: 'none',
-                display: 'block',
-                marginBottom: '8px'
-              }}
-            >
-              {repo.name}
-            </Link>
-            {/* ✅ New — Description */}
-  {repo.description && (
-    <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '6px' }}>
-      {repo.description}
-    </p>
-  )}
-
-  {/* ✅ New — Languages */}
-  {repo.languages && repo.languages.length > 0 && (
-    <div style={{ fontSize: '12px', color: '#bbb', marginBottom: '6px' }}>
-      <strong>Languages:</strong> {repo.languages.join(', ')}
-    </div>
-  )}
-            <div style={{ fontSize: '14px', color: '#aaa' }}>
-              ⭐ {repo.stars} &nbsp;&nbsp; 🍴 {repo.forks} &nbsp;&nbsp; 🐛 {repo.open_issues}
-            </div>
-          </div>
+            hideOwner={true}
+          />
         ))}
       </div>
-
-      {/* 📄 Pagination Controls */}
+      {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '8px' }}>
+        <div
+          className="pagination"
+          style={{
+            marginTop: "var(--space-8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "var(--space-4)"
+          }}
+        >
           <button
-            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-            disabled={page === 1}
+            className="pagination-btn"
             style={{
-padding: '3px 10px',
-    lineHeight: '1.5', // Ensures text is centered
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',              backgroundColor: '#0366d6',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: page === 1 ? 'not-allowed' : 'pointer',
-              opacity: page === 1 ? 0.5 : 1
+              padding: "var(--space-3) var(--space-6)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              color: "var(--text-primary)",
+              fontWeight: "500"
+            }}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            ← Previous
+          </button>
+          <span
+            className="pagination-info"
+            style={{
+              padding: "var(--space-3) var(--space-4)",
+              background: "var(--bg-tertiary)",
+              borderRadius: "var(--radius)",
+              color: "var(--text-primary)",
+              fontWeight: "500",
+              border: "1px solid var(--border)"
             }}
           >
-            Prev
-          </button>
-          <span style={{ padding: '5px', color: '#fff' }}>
             Page {page} of {totalPages}
           </span>
           <button
-            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={page === totalPages}
+            className="pagination-btn"
             style={{
-padding: '3px 10px',
-    lineHeight: '1.5', // Ensures text is centered
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',              backgroundColor: '#0366d6',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: page === totalPages ? 'not-allowed' : 'pointer',
-              opacity: page === totalPages ? 0.5 : 1
+              padding: "var(--space-3) var(--space-6)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              color: "var(--text-primary)",
+              fontWeight: "500"
             }}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
           >
-            Next
+            Next →
           </button>
         </div>
       )}
-
       {filteredRepos.length === 0 && (
-        <p style={{ marginTop: '20px' }}>No repositories found for the given filter.</p>
+        <p style={{ marginTop: "20px" }}>No repositories found for the given filter.</p>
       )}
-
     </div>
-  )
+  );
 }
-
-
-

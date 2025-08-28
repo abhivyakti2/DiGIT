@@ -1,13 +1,12 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-export default function RepoCard({ repo }) {
+export default function RepoCard({ repo, hideOwner }) {
   const navigate = useNavigate()
 
   return (
     <div
       className="card"
-      onClick={() => navigate(`/repo/${repo.owner}/${repo.name}`)}
       style={{
         margin: 0,
         padding: "var(--space-6)",
@@ -46,42 +45,47 @@ export default function RepoCard({ repo }) {
         </h4>
 
         {/* Owner avatar + name */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "var(--space-3)",
-            maxWidth: "200px",
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis"
-          }}
-          title={repo.owner}
-        >
-          <img
-            src={`https://github.com/${repo.owner}.png`}
-            alt={repo.owner}
+        {!hideOwner && (
+          <div
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              marginRight: "var(--space-2)",
-              flexShrink: 0,
-              border: "1px solid var(--border)"
-            }}
-          />
-          <span
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--text-muted)",
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "var(--space-3)",
+              maxWidth: "200px",
               overflow: "hidden",
               whiteSpace: "nowrap",
               textOverflow: "ellipsis"
             }}
+                          onClick={() => navigate(`/profile/${repo.owner}`)}
+
+            title={repo.owner}
           >
-            {repo.owner}
-          </span>
-        </div>
+            <img
+              src={`https://github.com/${repo.owner}.png`}
+              alt={repo.owner}
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                marginRight: "var(--space-2)",
+                flexShrink: 0,
+                border: "1px solid var(--border)"
+              }}
+
+            />
+            <span
+              style={{
+                fontSize: "0.875rem",
+                color: "var(--text-muted)",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis"
+              }}
+            >
+              {repo.owner}
+            </span>
+          </div>
+        )}
 
         {/* Description - 2 lines max */}
         {repo.description && (
@@ -144,6 +148,9 @@ export default function RepoCard({ repo }) {
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             🍴 {repo.forks}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+            🐛 {repo.open_issues}
           </span>
         </div>
         {repo.language && (

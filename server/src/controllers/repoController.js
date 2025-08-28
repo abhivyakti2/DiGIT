@@ -65,6 +65,7 @@ exports.searchRepositories = async (req, res, next) => {
           languages,
           topics,
           url: r.html_url,
+          open_issues: r.open_issues_count,  
           owner: r.owner?.login,
           updated_at: r.updated_at
         };

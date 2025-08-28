@@ -46,7 +46,8 @@ function AppContent() {
         
         {/* Only show search bar inline on non-home pages */}
         {!isHomePage && (
-          <div style={{ marginLeft: '320px', marginTop: '-40px', flex: 1, maxWidth: '500px' }}>
+          <div style={{ marginLeft: '275px', marginTop: '-55px', flex: 1, maxWidth: '500px',  position: 'relative',
+      top: '-10px'}}>
             <SearchBar inline />
           </div>
         )}

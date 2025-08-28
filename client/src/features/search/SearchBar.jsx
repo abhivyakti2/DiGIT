@@ -18,11 +18,16 @@ export default function SearchBar() {
       navigate(`/search?q=${encodeURIComponent(value.trim())}&type=${type}`)
     }
   }
+const inputRef = React.useRef(null);
 
-  const clearInput = () => {
-    setValue('')
-    navigate('/')
-  }
+const clearInput = () => {
+  setValue('');
+  // Stay on the current page and update only the query param
+  navigate(`/search?q=&type=${type}`);
+  // Refocus the input
+  setTimeout(() => inputRef.current?.focus(), 0); // Next tick to ensure DOM updated
+};
+
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter') doSearch()
@@ -44,6 +49,7 @@ export default function SearchBar() {
       <div className="search-input-container" style={{ position: 'relative' }}>
         <input
           type="text"
+          ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
@@ -91,25 +97,29 @@ export default function SearchBar() {
 
       {/* Type select */}
       <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        onKeyDown={onKeyDown}
-        className="search-select"
-        style={{
-          ...fieldStyle,
-          width: '160px',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          height: '48px',
-          background: 'var(--bg-secondary)',
-          border: '2px solid var(--border)',
-          boxShadow: 'var(--shadow-lg)'
-        }}
-      >
-        <option value="all">All</option>
-        <option value="profiles">Profiles</option>
-        <option value="repos">Repositories</option>
-      </select>
+  value={type}
+  onChange={e => {
+    setType(e.target.value);
+    navigate(`/search?q=${encodeURIComponent(value.trim())}&type=${e.target.value}`);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }}
+  onKeyDown={onKeyDown}
+  className="search-select"
+  style={{
+    ...fieldStyle,
+    width: '160px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    height: '48px',
+    background: 'var(--bg-secondary)',
+    border: '2px solid var(--border)',
+    boxShadow: 'var(--shadow-lg)'
+  }}
+>
+  <option value="profiles">Profiles</option>
+  <option value="repos">Repositories</option>
+</select>
+
 
       {/* Search button */}
       <button onClick={doSearch} className="btn-primary" style={{

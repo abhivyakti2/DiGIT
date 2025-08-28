@@ -123,12 +123,13 @@ exports.getRepoCommits = async (owner, repo, page = 1) => {
   return data;
 };
 
-exports.getRepoIssues = async (owner, repo) => {
+exports.getRepoIssues = async (owner, repo, page = 1, perPage = 10) => {
   const { data } = await apiClient.get(`/repos/${owner}/${repo}/issues`, {
-    params: { state: "open", per_page: 10 },
+    params: { state: "open", per_page: perPage, page },
   });
   return data.filter((i) => !i.pull_request);
 };
+
 
 exports.getRepoInfo = async (owner, repo) => {
   const { data } = await apiClient.get(`/repos/${owner}/${repo}`);

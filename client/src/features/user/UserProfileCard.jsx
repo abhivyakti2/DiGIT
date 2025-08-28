@@ -22,7 +22,7 @@ export default function UserProfileCard({ user }) {
     >
       {/* User info */}
       <div
-        style={{ display: "flex", alignItems: "flex-start" }}
+        style={{ display: "flex",  alignItems: "flex-start" }}
       >
         <img
           src={user.avatar}
@@ -36,7 +36,7 @@ export default function UserProfileCard({ user }) {
             boxShadow: "var(--shadow-md)"
           }}
         />
-        <div style={{ marginLeft: "var(--space-4)", flex: 1 }}>
+        <div style={{ marginLeft: "var(--space-4)",  flex: 1 }}>
           <h4
             style={{
               margin: "0 0 var(--space-2) 0",
@@ -60,12 +60,42 @@ export default function UserProfileCard({ user }) {
           }}>
             <span>📦 {user.public_repos ?? "–"}</span>
             <span>👥 {user.followers ?? "–"}</span>
+            
           </div>
+          
         </div>
+        
       </div>
+      {/* Top Languages */}
+        {Array.isArray(user.repoLanguages) && user.repoLanguages.length > 0 && (
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "6px" }}>
+            <strong >Languages:</strong>{" "}
+            {user.repoLanguages.slice(0, 3).join(", ")}
+          </div>
+        )}
       
+        {/* Website */}
+        {user.website && (
+          <div style={{ fontSize: "0.85rem", marginBottom: "6px" }}>
+            <a
+              href={user.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--primary)", fontWeight: "500", textDecoration: "none" }}
+              onClick={(e) => e.stopPropagation()} // Prevent navigation override
+            >
+{user.website
+  .replace(/^https?:\/\//, "") // Remove http:// or https://
+  .replace(/^www\./, "")       // Remove www.
+  .replace(/\/$/, "")}                 </a>
+          </div>
+        )}
+
       <div style={{ marginTop: "var(--space-4)" }}>
         <div>
+          
+
+        {/* Bio */}
           {user.bio && (
             <p style={{
               color: "var(--text-secondary)",
@@ -81,38 +111,6 @@ export default function UserProfileCard({ user }) {
             </p>
           )}
           
-          {user.top_repos && user.top_repos.length > 0 && (
-            <div style={{ marginTop: "var(--space-3)" }}>
-              <p style={{
-                fontSize: "0.875rem",
-                fontWeight: "600",
-                color: "var(--text-primary)",
-                marginBottom: "var(--space-2)"
-              }}>
-                ⭐ Top Repositories
-              </p>
-              <ul style={{ 
-                margin: 0, 
-                paddingLeft: "var(--space-4)",
-                listStyle: "none"
-              }}>
-                {user.top_repos.slice(0, 3).map((r) => (
-                  <li key={r.name} style={{
-                    marginBottom: "var(--space-1)",
-                    fontSize: "0.8rem"
-                  }}>
-                    <span style={{ color: "var(--primary)", marginRight: "var(--space-1)" }}>▸</span>
-                    <Link to={`/repo/${user.username}/${r.name}`}>
-                      {r.name}
-                    </Link>
-                    <span style={{ color: "var(--text-muted)", marginLeft: "var(--space-1)" }}>
-                      ({r.stars}★)
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     </div>

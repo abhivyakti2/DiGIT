@@ -37,6 +37,7 @@ exports.searchUsers = async (req, res, next) => {
           mostStarredRepo: mostStarredRepo?.name || null,
           repoLanguages: [...languageSet],
           latestCommitDate: recentCommit || null,
+          website: profile.blog || '', 
         };
       })
     );
@@ -96,6 +97,11 @@ exports.getUserByUsername = async (req, res, next) => {
         url: profile.html_url,
         id: profile.id,
         type: profile.type,
+        followers: profile.followers,      // ✅ added
+        following: profile.following,      // ✅ added
+        public_repos: profile.public_repos,// ✅ added
+        location: profile.location || '',  // ✅ added
+        website: profile.blog || '',       // ✅ added (GitHub uses "blog" for website)
         mostStarredRepo: mostStarredRepo?.name || null,
         repoLanguages: [...languageSet],
         latestCommitDate: recentCommit || null,
