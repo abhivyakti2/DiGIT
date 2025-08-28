@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSearchProfiles, useSearchRepos } from "../../api/github";
+import { useAppDispatch, useAppSelector } from '../../hooks/redux'
+import { searchProfiles, searchRepositories } from '../../store/slices/searchSlice'
 import UserProfileCard from "../user/UserProfileCard";
 import RepoCard from "../repo/RepoCard";
 import Loading from "../../componenets/Loading";
@@ -17,8 +18,12 @@ export default function SearchResults({ query, type }) {
   }
 
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const currentQ = searchParams.get("q") || "";
+  
+  // Get data from Redux store
+  const { profiles, repositories } = useAppSelector(state => state.search);
 
   // Separate page states
   const [profilePage, setProfilePage] = useState(1);
@@ -35,20 +40,17 @@ export default function SearchResults({ query, type }) {
   const normalPerPage = 6;
   const filteredPerPage = 6;
 
-  // Fetch profiles
-  const {
-    data: profiles,
-    isLoading: loadingProfiles,
-    isFetched: profilesFetched,
-  } = useSearchProfiles({ query, page: profilePage, perPage: normalPerPage });
-
-  // Fetch repos
-  const { data: repos, isLoading: loadingRepos } = useSearchRepos(
-    { query, page: repoPage, perPage: 50 }, // fetch larger batch for client filter
-    {
-      enabled: (type === "all" || type === "repos") && profilesFetched,
+  // Fetch data using Redux
+  useEffect(() => {
+    if (query && query.trim()) {
+      if (type === "profiles" || type === "all") {
+        dispatch(searchProfiles({ query, page: profilePage, perPage: normalPerPage }));
+      }
+      if (type === "repos" || type === "all") {
+        dispatch(searchRepositories({ query, page: repoPage, perPage: 50 }));
+      }
     }
-  );
+  }, [dispatch, query, type, profilePage, repoPage]);
 
   // Reset paging when query/type changes
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function SearchResults({ query, type }) {
 
   // Apply filter + sorting (but always keep sorting intact like code 1)
   const filteredReposFull = useMemo(() => {
-    let reposArr = repos?.repositories || [];
+    let reposArr = repositories.data || [];
 
     // Filtering step
     if (nameFilter) {
@@ -101,10 +103,10 @@ export default function SearchResults({ query, type }) {
   }, [filteredReposFull, nameFilter, filteredPage, repoPage]);
 
   const isLoading =
-    (activeTab === "profiles" && loadingProfiles) ||
-    (activeTab === "repos" && loadingRepos);
+    (activeTab === "profiles" && profiles.loading) ||
+    (activeTab === "repos" && repositories.loading);
 
-  const hasNextProfilePage = profiles?.users?.length === normalPerPage;
+  const hasNextProfilePage = profiles.data?.length === normalPerPage;
 
   // if (isLoading) return <Loading />;
 
@@ -141,10 +143,10 @@ export default function SearchResults({ query, type }) {
     )}
 
       {/* Profiles */}
-      {activeTab === "profiles" && profiles?.users?.length > 0 && (
+      {activeTab === "profiles" && profiles.data?.length > 0 && (
         <div className="animate-slide-in">
           <div className="grid grid-auto-fit" style={gridStyle}>
-            {profiles.users.map((u) => (
+            {profiles.data.map((u) => (
               <UserProfileCard key={u.username} user={u} />
             ))}
           </div>
@@ -169,7 +171,7 @@ export default function SearchResults({ query, type }) {
       )}
 
       {/* Repos */}
-      {activeTab === "repos" && repos?.repositories?.length > 0 && (
+      {activeTab === "repos" && repositories.data?.length > 0 && (
         <div className="animate-slide-in">
           {/* Sort + Filter */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px", gap: "8px", alignItems: "center" }}>
@@ -246,7 +248,7 @@ export default function SearchResults({ query, type }) {
               disabled={
                 nameFilter
                   ? filteredPage >= Math.ceil(filteredReposFull.length / filteredPerPage)
-                  : repoPage >= Math.ceil((repos?.repositories?.length || 0) / normalPerPage)
+                  : repoPage >= Math.ceil((repositories.data?.length || 0) / normalPerPage)
               }
               style={{ ...buttonResetStyle, ...paginationButtonStyle }}
             >
@@ -258,8 +260,8 @@ export default function SearchResults({ query, type }) {
 
       {/* No results */}
       {!isLoading &&
-        ((activeTab === "profiles" && !profiles?.users?.length) ||
-          (activeTab === "repos" && !repos?.repositories?.length)) && (
+        ((activeTab === "profiles" && !profiles.data?.length) ||
+          (activeTab === "repos" && !repositories.data?.length)) && (
           <div className="no-results" style={noResultsStyle}>
             <div style={{ fontSize: "3rem", marginBottom: "var(--space-4)" }}>🔍</div>
             <h3>No results found</h3>

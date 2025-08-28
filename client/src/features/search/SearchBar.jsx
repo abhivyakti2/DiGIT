@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../hooks/redux'
+import { setCurrentQuery, setCurrentType, addRecentSearch } from '../../store/slices/searchSlice'
 
 export default function SearchBar() {
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
   const [searchParams] = useSearchParams()
+  const { currentQuery, currentType } = useAppSelector(state => state.search)
 
-  const [value, setValue] = useState('')
-  const [type, setType] = useState('all')
+  const [value, setValue] = useState(currentQuery)
+  const [type, setType] = useState(currentType)
 
   useEffect(() => {
-    setValue(searchParams.get('q') || '')
-    setType(searchParams.get('type') || 'all')
+    const queryParam = searchParams.get('q') || ''
+    const typeParam = searchParams.get('type') || 'profiles'
+    setValue(queryParam)
+    setType(typeParam)
+    dispatch(setCurrentQuery(queryParam))
+    dispatch(setCurrentType(typeParam))
   }, [searchParams])
 
   const doSearch = () => {
     if (value.trim()) {
+      dispatch(addRecentSearch(value.trim()))
+      dispatch(setCurrentQuery(value.trim()))
+      dispatch(setCurrentType(type))
       navigate(`/search?q=${encodeURIComponent(value.trim())}&type=${type}`)
     }
   }
@@ -22,6 +33,7 @@ const inputRef = React.useRef(null);
 
 const clearInput = () => {
   setValue('');
+  dispatch(setCurrentQuery(''));
   // Stay on the current page and update only the query param
   navigate(`/search?q=&type=${type}`);
   // Refocus the input
@@ -99,7 +111,9 @@ const clearInput = () => {
       <select
   value={type}
   onChange={e => {
-    setType(e.target.value);
+    const newType = e.target.value;
+    setType(newType);
+    dispatch(setCurrentType(newType));
     navigate(`/search?q=${encodeURIComponent(value.trim())}&type=${e.target.value}`);
     setTimeout(() => inputRef.current?.focus(), 0);
   }}

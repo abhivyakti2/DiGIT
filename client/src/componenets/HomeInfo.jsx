@@ -1,6 +1,7 @@
 
 // HomeInfo.jsx
 import React from 'react'
+import RecentSearches from '../features/search/RecentSearches'
 import logo from '../assets/Logo.png'
 
 export default function HomeInfo() {
@@ -45,6 +46,9 @@ export default function HomeInfo() {
           Search through millions of GitHub users and projects with advanced analytics.
         </p>
       </div>
+      
+      {/* Recent Searches */}
+      <RecentSearches />
     </div>
   )
 }

@@ -1,21 +1,31 @@
 import React, { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useUserDetails } from "../../api/github";
+import { useAppDispatch, useAppSelector } from '../../hooks/redux'
+import { fetchUserDetails } from '../../store/slices/userSlice'
 import RepoCard from "../repo/RepoCard"; // Make sure this is imported
+import Loading from "../../componenets/Loading";
 
 export default function UserExpandedProfile() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { data, isLoading, error } = useUserDetails(username);
+  const dispatch = useAppDispatch();
+  const { currentUser } = useAppSelector(state => state.user);
 
   const [filter, setFilter] = useState("");
   const [sortBy, setSortBy] = useState("stars");
   const [page, setPage] = useState(1);
   const perPage = 9;
 
+  // Fetch user data when component mounts or username changes
+  React.useEffect(() => {
+    if (username) {
+      dispatch(fetchUserDetails(username));
+    }
+  }, [dispatch, username]);
+
   // Filtering, sorting and paging
   const filteredRepos = useMemo(() => {
-    let filtered = data?.repositories || [];
+    let filtered = currentUser.data?.repositories || [];
     if (filter) {
       filtered = filtered.filter(repo =>
         repo.name.toLowerCase().includes(filter.toLowerCase())
@@ -27,15 +37,17 @@ export default function UserExpandedProfile() {
       filtered.sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0));
     }
     return filtered;
-  }, [data?.repositories, filter, sortBy]);
+  }, [currentUser.data?.repositories, filter, sortBy]);
 
   const totalPages = Math.ceil(filteredRepos.length / perPage);
   const paginatedRepos = filteredRepos.slice((page - 1) * perPage, page * perPage);
 
   // States
-  if (isLoading) return <p>Loading user profile...</p>;
-  if (error) return <p>Error loading user profile.</p>;
-  if (!data) return <p>No data found.</p>;
+  if (currentUser.loading) return <Loading text="Loading user profile..." />;
+  if (currentUser.error) return <p>Error loading user profile: {currentUser.error}</p>;
+  if (!currentUser.data) return <p>No data found.</p>;
+
+  const data = currentUser.data;
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px" }}>

@@ -1,23 +1,24 @@
 import React, { useState } from "react";
 import Loading from "../../componenets/Loading";
 import { useParams, Link } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from '../../hooks/redux'
+import {
+  fetchRepoDetails,
+  fetchRepoCommitActivity,
+  fetchRepoContributors,
+  fetchRepoCommits,
+  fetchRepoIssues,
+  fetchRepoTree,
+  fetchFileContent,
+  setCommitsPage,
+  setIssuesPage
+} from '../../store/slices/repoSlice'
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw"; // allow raw HTML
 import ContributorCard from "./ContributorCard";
-import {
-  useFileContent,
-  useRepoCommits,
-  useRepoIssues,
-} from "../../api/github";
 import buildNestedTree from "../../utils/buildNestedTree";
 import rehypeSanitize from "rehype-sanitize"; // prevent XSS
-import {
-  useRepoDetails,
-  useRepoTree,
-  useRepoCommitActivity,
-  useRepoContributors,
-} from "../../api/github";
 import CodeExplorer from "../code/CodeExplorer";
 import CommitHistoryChart from "./CommitHistoryChart";
 import RepoTable from "./RepoTable";
@@ -28,52 +29,75 @@ import ContributorPreview from "./ContributorPreview";
 
 export default function RepoExpandedPage() {
   const { owner, repo } = useParams();
+  const dispatch = useAppDispatch();
+  const {
+    currentRepo,
+    commitActivity,
+    contributors,
+    commits,
+    issues,
+    tree,
+    fileContents,
+    fileLoadingStates
+  } = useAppSelector(state => state.repo);
+  
   const [tab, setTab] = useState("readme");
   const [viewMode, setViewMode] = useState("graph");
-
-  const [commitsPage, setCommitsPage] = useState(1);
-  const [issuesPage, setIssuesPage] = useState(1);
-  const perPage = 10;
-  const { data: commitsData, isLoading: loadingCommits } = useRepoCommits(
-    { owner, repo, page: commitsPage, perPage: perPage },
-    { enabled: tab === "commits" }
-  );
-  const { data: issuesData, isLoading: loadingIssues } = useRepoIssues(
-    { owner, repo, page: issuesPage, perPage: perPage },
-    { enabled: tab === "issues" }
-  );
-  const { data, isLoading: loadingDetails } = useRepoDetails({ owner, repo });
-  const { data: treeData } = useRepoTree(owner, repo, "main", {
-    enabled: tab === "code",
-  });
-  const {
-    data: commitsHistoryData,
-    isLoading: loadingCommitsHistory,
-    isError,
-  } = useRepoCommitActivity({ owner, repo }, { enabled: tab === "commits" });
-  const { data: contributorsData } = useRepoContributors(
-    { owner, repo },
-    { enabled: tab === "contributors" }
-  );
   const [selectedFile, setSelectedFile] = useState(null);
-  const { data: fileContent, isLoading: loadingFileContent } = useFileContent(
-    owner,
-    repo,
-    selectedFile
-  );
+  const perPage = 10;
+
+  // Fetch initial repo details
+  React.useEffect(() => {
+    if (owner && repo) {
+      dispatch(fetchRepoDetails({ owner, repo }));
+    }
+  }, [dispatch, owner, repo]);
+
+  // Fetch data based on active tab
+  React.useEffect(() => {
+    if (!owner || !repo) return;
+
+    switch (tab) {
+      case "code":
+        dispatch(fetchRepoTree({ owner, repo, branch: "main" }));
+        break;
+      case "commits":
+        dispatch(fetchRepoCommitActivity({ owner, repo }));
+        dispatch(fetchRepoCommits({ owner, repo, page: commits.currentPage, perPage }));
+        break;
+      case "issues":
+        dispatch(fetchRepoIssues({ owner, repo, page: issues.currentPage, perPage }));
+        break;
+      case "contributors":
+        dispatch(fetchRepoContributors({ owner, repo }));
+        break;
+    }
+  }, [dispatch, owner, repo, tab, commits.currentPage, issues.currentPage]);
+
+  // Fetch file content when selected
+  React.useEffect(() => {
+    if (selectedFile && owner && repo) {
+      dispatch(fetchFileContent({ owner, repo, path: selectedFile }));
+    }
+  }, [dispatch, owner, repo, selectedFile]);
+
   function handleFileSelect(filePath) {
     setSelectedFile(filePath);
   }
-  if (loadingDetails) return <Loading />;
-  if (!data) return <p>No repository data found.</p>;
-  const { stars, forks, created_at, readme, website, issues } = data;
-  function handleFileSelect(filePath) {
-    setSelectedFile(filePath);
-  }
+
+  if (currentRepo.loading) return <Loading />;
+  if (currentRepo.error) return <p>Error: {currentRepo.error}</p>;
+  if (!currentRepo.data) return <p>No repository data found.</p>;
+
+  const { stars, forks, created_at, readme, website } = currentRepo.data;
+  const fileContent = fileContents[selectedFile];
+  const loadingFileContent = fileLoadingStates[selectedFile];
+
   return (
     <div style={{ padding: 16 }}>
       <h1>{repo}</h1>
       <p>{data.description}</p>
+      <p>{currentRepo.data.description}</p>
       <p>
         ⭐ : {stars} | 🍴 : {forks} | Created:{" "}
         {new Date(created_at).toLocaleDateString()}
@@ -126,7 +150,7 @@ export default function RepoExpandedPage() {
         {tab === "code" && (
           <>
             <CodeExplorer
-              treeData={treeData ? buildNestedTree(treeData) : []}
+              treeData={tree.data ? buildNestedTree(tree.data) : []}
               onFileSelect={handleFileSelect}
             />
 
@@ -211,9 +235,9 @@ export default function RepoExpandedPage() {
                 {/* Conditionally render graph or table */}
                 {viewMode === "graph" ? (
                   <CommitHistoryChart
-                    data={commitsHistoryData}
-                    isLoading={loadingCommitsHistory}
-                    isError={isError}
+                    data={commitActivity.data}
+                    isLoading={commitActivity.loading}
+                    isError={!!commitActivity.error}
                   />
                 ) : (
                   <>
@@ -228,10 +252,10 @@ export default function RepoExpandedPage() {
                         Recent Commits
                       </h2>
                     </div>
-                    {loadingCommits && <Loading />}
-                    {!loadingCommits &&
-                      commitsData &&
-                      commitsData.length === 0 && (
+                    {commits.loading && <Loading />}
+                    {!commits.loading &&
+                      commits.data &&
+                      commits.data.length === 0 && (
                         <p
                           style={{
                             color: "var(--text-secondary)",
@@ -241,13 +265,13 @@ export default function RepoExpandedPage() {
                           No commits found.
                         </p>
                       )}
-                    {!loadingCommits &&
-                      commitsData &&
-                      commitsData.length > 0 && (
+                    {!commits.loading &&
+                      commits.data &&
+                      commits.data.length > 0 && (
                         <>
                           <RepoTable
                             data={
-                              commitsData?.map((commit) => ({
+                              commits.data?.map((commit) => ({
                                 id: commit.sha,
                                 title: commit.message?.split("\n")[0],
                                 url: commit.url,
@@ -319,9 +343,9 @@ export default function RepoExpandedPage() {
                           <div className="pagination" style={paginationStyle}>
                             <button
                               onClick={() =>
-                                setCommitsPage((p) => Math.max(1, p - 1))
+                                dispatch(setCommitsPage(Math.max(1, commits.currentPage - 1)))
                               }
-                              disabled={commitsPage === 1}
+                              disabled={commits.currentPage === 1}
                               style={{
                                 ...buttonResetStyle,
                                 ...paginationButtonStyle,
@@ -330,12 +354,12 @@ export default function RepoExpandedPage() {
                               ← Prev
                             </button>
                             <span style={paginationInfoStyle}>
-                              Page {commitsPage}
+                              Page {commits.currentPage}
                             </span>
                             <button
-                              onClick={() => setCommitsPage((p) => p + 1)}
+                              onClick={() => dispatch(setCommitsPage(commits.currentPage + 1))}
                               disabled={
-                                !commitsData || commitsData.length < perPage
+                                !commits.data || commits.data.length < perPage
                               }
                               style={{
                                 ...buttonResetStyle,
@@ -355,31 +379,31 @@ export default function RepoExpandedPage() {
 
         {tab === "issues" && (
           <>
-            {loadingIssues && <Loading />}
-            {!loadingIssues && issuesData && issuesData.length === 0 && (
+            {issues.loading && <Loading />}
+            {!issues.loading && issues.data && issues.data.length === 0 && (
               <p
                 style={{ color: "var(--text-secondary)", textAlign: "center" }}
               >
                 No open issues found.
               </p>
             )}
-            {!loadingIssues && issuesData && issuesData.length > 0 && (
+            {!issues.loading && issues.data && issues.data.length > 0 && (
               <>
-                <IssuesTable data={issuesData || []} />
+                <IssuesTable data={issues.data || []} />
                 {/* Pagination Controls */}
 
                 <div className="pagination" style={paginationStyle}>
                   <button
-                    onClick={() => setIssuesPage((p) => Math.max(1, p - 1))}
-                    disabled={issuesPage === 1}
+                    onClick={() => dispatch(setIssuesPage(Math.max(1, issues.currentPage - 1)))}
+                    disabled={issues.currentPage === 1}
                     style={{ ...buttonResetStyle, ...paginationButtonStyle }}
                   >
                     ← Prev
                   </button>
-                  <span style={paginationInfoStyle}>Page {issuesPage}</span>
+                  <span style={paginationInfoStyle}>Page {issues.currentPage}</span>
                   <button
-                    onClick={() => setIssuesPage((p) => p + 1)}
-                    disabled={!issuesData || issuesData.length < perPage}
+                    onClick={() => dispatch(setIssuesPage(issues.currentPage + 1))}
+                    disabled={!issues.data || issues.data.length < perPage}
                     style={{ ...buttonResetStyle, ...paginationButtonStyle }}
                   >
                     Next →
@@ -392,7 +416,7 @@ export default function RepoExpandedPage() {
 
         {tab === "contributors" && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            {contributorsData?.map((c) => (
+            {contributors.data?.map((c) => (
               <ContributorCard key={c.username} contributor={c} />
             ))}
           </div>
